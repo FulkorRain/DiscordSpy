@@ -7,12 +7,19 @@
     input { width: 100%; box-sizing: border-box; margin-bottom: 10px; background: #23272a; border: 1px solid #7289da; color: white; padding: 8px; border-radius: 4px; outline: none; }
     button { background: #7289da; color: white; border: none; padding: 10px; cursor: pointer; width: 100%; border-radius: 4px; font-weight: bold; }
     button:hover { background: #677bc4; }
+    .toggle-container { display: flex; align-items: center; margin-bottom: 10px; font-size: 13px; cursor: pointer; }
+    input[type="checkbox"] { width: auto; margin-right: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h4>Target ID Locked</h4>
-  <input type="text" id="userId" placeholder="Enter User ID...">
-  <button id="save">UPDATE TARGET</button>
+  <h4>Spy Config</h4>
+  <input type="text" id="userId" placeholder="IDs (comma separated)...">
+  
+  <label class="toggle-container">
+    <input type="checkbox" id="notifyToggle"> Enable Notifications
+  </label>
+
+  <button id="save">SAVE SETTINGS</button>
   <script src="popup.js"></script>
 </body>
 </html>

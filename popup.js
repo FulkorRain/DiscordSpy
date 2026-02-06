@@ -1,15 +1,20 @@
 const api = (typeof browser !== "undefined") ? browser : chrome;
 
-api.storage.local.get(['targetId'], (res) => {
-  if (res.targetId) {
-    document.getElementById('userId').value = res.targetId;
+
+api.storage.local.get(['targetIds', 'notificationsEnabled'], (res) => {
+  if (res.targetIds) {
+    document.getElementById('userId').value = res.targetIds.join(', ');
   }
+  
+  document.getElementById('notifyToggle').checked = res.notificationsEnabled !== false;
 });
 
 document.getElementById('save').onclick = () => {
-  const id = document.getElementById('userId').value.trim();
-  if (!id) return;
-  api.storage.local.set({ targetId: id }, () => {
+  const input = document.getElementById('userId').value;
+  const ids = input.split(',').map(id => id.trim()).filter(id => id.length > 0);
+  const isEnabled = document.getElementById('notifyToggle').checked;
+  
+  api.storage.local.set({ targetIds: ids, notificationsEnabled: isEnabled }, () => {
     window.close();
   });
 };

@@ -1,18 +1,23 @@
-let targetUserId = "";
+let targetIds = [];
+let notificationsEnabled = true;
 const api = (typeof browser !== "undefined") ? browser : chrome;
 let lastNotificationTime = 0;
 const MIN_INTERVAL_MS = 2000; 
 
-function updateTarget() {
-  api.storage.local.get(['targetId'], (res) => {
-    targetUserId = res.targetId || "";
+function updateSettings() {
+  api.storage.local.get(['targetIds', 'notificationsEnabled'], (res) => {
+    targetIds = res.targetIds || [];
+    notificationsEnabled = res.notificationsEnabled !== false;
   });
 }
 
-updateTarget();
-api.storage.onChanged.addListener(updateTarget);
+updateSettings();
+api.storage.onChanged.addListener(updateSettings);
 
 function notify(author, content) {
+
+  if (!notificationsEnabled) return;
+
   const now = Date.now();
   if (now - lastNotificationTime < MIN_INTERVAL_MS) return;
   lastNotificationTime = now;
@@ -26,11 +31,11 @@ function notify(author, content) {
   });
 }
 
-api.runtime.onMessage.addListener((message, sender) => {
+api.runtime.onMessage.addListener((message) => {
   if (message.type !== "NEW_MESSAGE") return;
-  if (!targetUserId) return;
+  if (targetIds.length === 0) return;
 
-  if (message.userId === targetUserId) {
+  if (targetIds.includes(message.userId)) {
     notify(message.author, message.content);
   }
 });
