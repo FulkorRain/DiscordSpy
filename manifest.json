@@ -1,17 +1,16 @@
 {
   "manifest_version": 2,
-  "name": "Discord WordWatch Notifier",
-  "version": "1.0",
-  "description": "Watches a specific Discord channel and notifies you when a new message matches your word list.",
-  "applications": {
-    "gecko": {
-      "id": "discord-wordwatch@fulkor"
-    }
-  },
+  "name": "Discord Target Tracker",
+  "version": "2.0",
   "permissions": [
     "notifications",
+    "storage",
     "https://discord.com/*"
   ],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_title": "Set Target ID"
+  },
   "background": {
     "scripts": [
       "background.js"
@@ -28,9 +27,6 @@
       ],
       "run_at": "document_idle"
     }
-  ],
-  "web_accessible_resources": [
-    "words.txt"
   ],
   "icons": {
     "16": "icon16.png",

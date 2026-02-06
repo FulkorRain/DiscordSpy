@@ -1,22 +1,10 @@
 (() => {
-  if (window.__discordWordWatchInitialized) return;
-  window.__discordWordWatchInitialized = true;
+  if (window.__discordTargetWatchInitialized) return;
+  window.__discordTargetWatchInitialized = true;
 
-  // Same target channel as your old extension. Change this if you want a different channel.
-  const TARGET_PATH = "/channels/378344742565707780/1225922104633856033";
-
-  console.log("[WordWatch] Content script loaded");
-
-  function isOnTargetChannel() {
-    return location.pathname.startsWith(TARGET_PATH);
-  }
-
-  // Avoid spamming on initial load / big rerenders
-  const startedAt = Date.now();
-  const IGNORE_FIRST_MS = 2500;
-
+  const apiRT = (typeof browser !== "undefined") ? browser.runtime : chrome.runtime;
+  
   function getChatLog() {
-    // Discord usually uses role="log" for the chat area
     return document.querySelector('[role="log"]') || document.body;
   }
 
@@ -24,7 +12,7 @@
     return (
       article.querySelector('span[id^="message-username-"]')?.textContent?.trim() ||
       article.querySelector('[class*="username"]')?.textContent?.trim() ||
-      ""
+      "Unknown"
     );
   }
 
@@ -32,16 +20,21 @@
     return (
       article.querySelector('div[id^="message-content-"]')?.innerText?.trim() ||
       article.querySelector('[id^="message-content-"]')?.textContent?.trim() ||
-      ""
+      "[Image/Embed]"
     );
+  }
+
+  function extractUserId(article) {
+    const avatarImg = article.querySelector('img[src*="/avatars/"]');
+    if (!avatarImg) return null;
+    const match = avatarImg.src.match(/\/avatars\/(\d+)\//);
+    return match ? match[1] : null;
   }
 
   function findArticleWithin(node) {
     if (!(node instanceof Element)) return null;
-
-    if (node.matches('div[role="article"][aria-roledescription="Message"]')) return node;
-
-    return node.querySelector?.('div[role="article"][aria-roledescription="Message"]') || null;
+    if (node.matches('div[role="article"]')) return node;
+    return node.querySelector?.('div[role="article"]') || null;
   }
 
   function findMessageListItems(node) {
@@ -50,19 +43,19 @@
     return Array.from(node.querySelectorAll?.('li[id^="chat-messages-"]') || []);
   }
 
-  function handleMessageNode(liOrAny) {
-    const article = findArticleWithin(liOrAny);
+  function handleMessageNode(node) {
+    const article = findArticleWithin(node);
     if (!article) return;
+
+    const userId = extractUserId(article);
+    if (!userId) return;
 
     const author = extractAuthor(article);
     const content = extractContent(article);
 
-    if (!content) return;
-
-    // Send to background for matching
-    const apiRT = (typeof browser !== "undefined") ? browser.runtime : chrome.runtime;
     apiRT.sendMessage({
       type: "NEW_MESSAGE",
+      userId,
       author,
       content
     });
@@ -70,31 +63,22 @@
 
   function startObserver() {
     const root = getChatLog();
-
     const observer = new MutationObserver((mutations) => {
-      if (!isOnTargetChannel()) return;
-      if (Date.now() - startedAt < IGNORE_FIRST_MS) return;
-
       for (const m of mutations) {
         for (const node of m.addedNodes) {
           if (!(node instanceof Element)) continue;
-
-          // Prefer list items if present
+          
           const lis = findMessageListItems(node);
           if (lis.length) {
-            for (const li of lis) handleMessageNode(li);
-            continue;
+            lis.forEach(handleMessageNode);
+          } else {
+            handleMessageNode(node);
           }
-
-          // Fallback: if Discord adds message blocks without li wrappers
-          const article = findArticleWithin(node);
-          if (article) handleMessageNode(article);
         }
       }
     });
 
     observer.observe(root, { childList: true, subtree: true });
-    console.log("[WordWatch] Observer attached");
   }
 
   if (document.readyState === "loading") {
