@@ -1,7 +1,13 @@
 {
   "manifest_version": 2,
-  "name": "Discord Target Tracker",
-  "version": "2.0",
+  "name": "Discord Spy",
+  "version": "1.0",
+  "description": "Watches opened tabs for messages sent by user that match the ID(s) set, Sending a notification (which can be turned ON/OFF) with the MSG content.",
+  "applications": {
+    "gecko": {
+      "id": "discord-spy@fulkor"
+    }
+  },
   "permissions": [
     "notifications",
     "storage",
